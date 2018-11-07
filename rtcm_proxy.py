@@ -88,4 +88,5 @@ if ublox is not None:
     runRtcmServer(messenger.hub)
 else:
     print('Ublox not found')
+
 messenger.stop()
