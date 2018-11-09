@@ -99,10 +99,12 @@ class ntripOptionsDialog(QDialog):
     grid.addWidget(buttonBox, 6, 0, 1, 0)
 
     self.setLayout(grid)
-    self.setWindowTitle("Опции Ntrip")
+    self.setWindowTitle("Опции NTRIP")
     self.setMinimumWidth(300)
 
 class MainWindow(QWidget):
+
+  # TODO: сделать разделение полей и индикацию
 
   def __init__(self):
     
@@ -118,15 +120,15 @@ class MainWindow(QWidget):
     grid.addWidget(autopilotOptionsButton, 0, 1)
 
     self.inputStreamType = QComboBox()
-    self.inputStreamType.addItems(['Базовая станция', 'Ntrip'])
+    self.inputStreamType.addItems(['Базовая станция', 'NTRIP'])
     grid.addWidget(self.inputStreamType, 1, 0)
 
     inputSreamOptionsButton = QPushButton('Опции')
     inputSreamOptionsButton.clicked.connect(self.showInputStreamOptions)
     grid.addWidget(inputSreamOptionsButton, 1, 1)
 
-    startButton = QPushButton("Запустить")
-    stopButton = QPushButton("Остановить")
+    startButton = QPushButton('Запустить')
+    stopButton = QPushButton('Остановить')
 
     grid.addWidget(startButton, 2, 0)
     grid.addWidget(stopButton, 2, 1)
@@ -149,6 +151,6 @@ if __name__ == '__main__':
   app = QApplication(sys.argv)
   window = MainWindow()
   window.setGeometry(300, 300, 350, 0)
-  window.setWindowTitle('First Task')
+  window.setWindowTitle('RTK proxy')
   window.show()
   sys.exit(app.exec_())
