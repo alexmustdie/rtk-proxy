@@ -331,8 +331,6 @@ if __name__ == '__main__':
             print "Uncrypted Connection"
         print ""
 
-
-
     fileOutput=False
     if options.outputFile:
         f = open(options.outputFile, 'w')

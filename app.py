@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
@@ -6,87 +6,149 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-class Example(QWidget):
+class autopilotOptionsDialog(QDialog):
 
   def __init__(self):
-    super().__init__()
-    self.initUI()
-
-  def initUI(self):
+    
+    super(autopilotOptionsDialog, self).__init__()
 
     grid = QGridLayout()
     grid.setSpacing(10)
 
-    #autopilot part
-
-    autopilotLabel = QLabel('Aвтопилот')
-    autopilotLabel.setAlignment(Qt.AlignCenter)
-    grid.addWidget(autopilotLabel, 0, 0, 1, 0)
-
-    autopilotSerialEdit = QLineEdit()
+    self.serial = QLineEdit()
     grid.addWidget(QLabel('Устройство COM-порта'), 1, 0)
-    grid.addWidget(autopilotSerialEdit, 1, 1)
+    grid.addWidget(self.serial, 1, 1)
 
-    autopilotBaudrateComboBox = QComboBox()
-    autopilotBaudrateComboBox.addItems(['57600', '115200', '230400', '460800', '500000', '921600', '1000000', '1500000', '2000000'])
+    self.baudrate = QComboBox()
+    self.baudrate.addItems(['57600', '115200', '230400', '460800', '500000', '921600', '1000000', '1500000', '2000000'])
     grid.addWidget(QLabel('Скорость порта'), 2, 0)
-    grid.addWidget(autopilotBaudrateComboBox, 2, 1)
+    grid.addWidget(self.baudrate, 2, 1)
 
-    hubEdit = QLineEdit('Ublox')
+    self.hub = QLineEdit('Ublox')
     grid.addWidget(QLabel('Имя устройства в автопилоте'), 3, 0)
-    grid.addWidget(hubEdit, 3, 1)
+    grid.addWidget(self.hub, 3, 1)
 
-    #base station part
-
-    '''baseStationLabel = QLabel('Базовая станция')
-    baseStationLabel.setAlignment(Qt.AlignCenter)
-    grid.addWidget(baseStationLabel, 4, 0, 1, 0)
-
-    baseStationSerialEdit = QLineEdit()
-    grid.addWidget(QLabel('Устройство COM-порта'), 5, 0)
-    grid.addWidget(baseStationSerialEdit, 5, 1)
-
-    baseStationComboBox = QComboBox()
-    baseStationComboBox.addItems(['9600', '19200', '38400', '57600', '115200', '230400', '460800'])
-    grid.addWidget(QLabel('Скорость порта'), 6, 0)
-    grid.addWidget(baseStationComboBox, 6, 1)'''
-
-    #ntrip part
-    
-    ntripLabel = QLabel('Ntrip')
-    ntripLabel.setAlignment(Qt.AlignCenter)
-    grid.addWidget(ntripLabel, 4, 0, 1, 0)
-
-    ipEdit = QLineEdit()
-    grid.addWidget(QLabel('IP'), 5, 0)
-    grid.addWidget(ipEdit, 5, 1)
-
-    portEdit = QLineEdit()
-    grid.addWidget(QLabel('port'), 6, 0)
-    grid.addWidget(portEdit, 6, 1)
-
-    mountpointEdit = QLineEdit()
-    grid.addWidget(QLabel('mountpoint'), 7, 0)
-    grid.addWidget(mountpointEdit, 7, 1)
-
-    userEdit = QLineEdit()
-    grid.addWidget(QLabel('user'), 8, 0)
-    grid.addWidget(userEdit, 8, 1)
-
-    passwordEdit = QLineEdit()
-    grid.addWidget(QLabel('password'), 9, 0)
-    grid.addWidget(passwordEdit, 9, 1)
-
-    runButton = QPushButton("Запустить")
-    grid.addWidget(runButton, 10, 0, 1, 0)
+    buttonBox = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+    buttonBox.rejected.connect(self.reject)
+    buttonBox.accepted.connect(self.accept)
+    grid.addWidget(buttonBox, 4, 0, 1, 0)
 
     self.setLayout(grid)
-    self.setGeometry(300, 300, 350, 0)
-    self.setWindowTitle('First Task')
-    self.show()
+    self.setWindowTitle("Опции автопилота")
+    self.setMinimumWidth(350)
+
+class baseStationOptionsDialog(QDialog):
+
+  def __init__(self):
+    
+    super(baseStationOptionsDialog, self).__init__()
+
+    grid = QGridLayout()
+    grid.setSpacing(10)
+
+    self.serial = QLineEdit()
+    grid.addWidget(QLabel('Устройство COM-порта'), 1, 0)
+    grid.addWidget(self.serial, 1, 1)
+
+    self.baudrate = QComboBox()
+    self.baudrate.addItems(['9600', '19200', '38400', '57600', '115200', '230400', '460800'])
+    grid.addWidget(QLabel('Скорость порта'), 2, 0)
+    grid.addWidget(self.baudrate, 2, 1)
+
+    buttonBox = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+    buttonBox.rejected.connect(self.reject)
+    buttonBox.accepted.connect(self.accept)
+    grid.addWidget(buttonBox, 4, 0, 1, 0)
+
+    self.setLayout(grid)
+    self.setWindowTitle("Опции базовой станции")
+    self.setMinimumWidth(300)
+
+class ntripOptionsDialog(QDialog):
+
+  def __init__(self):
+    
+    super(ntripOptionsDialog, self).__init__()
+
+    grid = QGridLayout()
+    grid.setSpacing(10)
+
+    self.ip = QLineEdit()
+    grid.addWidget(QLabel('IP'), 1, 0)
+    grid.addWidget(self.ip, 1, 1)
+
+    self.port = QLineEdit()
+    grid.addWidget(QLabel('port'), 2, 0)
+    grid.addWidget(self.port, 2, 1)
+
+    self.mountpoint = QLineEdit()
+    grid.addWidget(QLabel('mountpoint'), 3, 0)
+    grid.addWidget(self.mountpoint, 3, 1)
+
+    self.user = QLineEdit()
+    grid.addWidget(QLabel('user'), 4, 0)
+    grid.addWidget(self.user, 4, 1)
+
+    self.password = QLineEdit()
+    grid.addWidget(QLabel('password'), 5, 0)
+    grid.addWidget(self.password, 5, 1)
+    
+    buttonBox = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+    buttonBox.rejected.connect(self.reject)
+    buttonBox.accepted.connect(self.accept)
+    grid.addWidget(buttonBox, 6, 0, 1, 0)
+
+    self.setLayout(grid)
+    self.setWindowTitle("Опции Ntrip")
+    self.setMinimumWidth(300)
+
+class MainWindow(QWidget):
+
+  def __init__(self):
+    
+    super(MainWindow, self).__init__()
+
+    grid = QGridLayout()
+    grid.setSpacing(10)
+
+    grid.addWidget(QLabel('Aвтопилот'), 0, 0)
+  
+    autopilotOptionsButton = QPushButton('Опции')
+    autopilotOptionsButton.clicked.connect(self.showAutopilotOptions)
+    grid.addWidget(autopilotOptionsButton, 0, 1)
+
+    self.inputStreamType = QComboBox()
+    self.inputStreamType.addItems(['Базовая станция', 'Ntrip'])
+    grid.addWidget(self.inputStreamType, 1, 0)
+
+    inputSreamOptionsButton = QPushButton('Опции')
+    inputSreamOptionsButton.clicked.connect(self.showInputStreamOptions)
+    grid.addWidget(inputSreamOptionsButton, 1, 1)
+
+    startButton = QPushButton("Запустить")
+    stopButton = QPushButton("Остановить")
+
+    grid.addWidget(startButton, 2, 0)
+    grid.addWidget(stopButton, 2, 1)
+    
+    self.setLayout(grid)
+
+  def showAutopilotOptions(self):
+    autopilotOptionsDialog().exec_()
+
+  def showInputStreamOptions(self):
+    if self.inputStreamType.currentIndex() == 0:
+      baseStationOptionsDialog().exec_()
+    else:
+      if self.inputStreamType.currentIndex() == 1:
+        ntripOptionsDialog().exec_()
+
 
 if __name__ == '__main__':
 
   app = QApplication(sys.argv)
-  ex = Example()
+  window = MainWindow()
+  window.setGeometry(300, 300, 350, 0)
+  window.setWindowTitle('First Task')
+  window.show()
   sys.exit(app.exec_())
