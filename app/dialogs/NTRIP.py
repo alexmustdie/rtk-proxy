@@ -37,3 +37,4 @@ class NtripOptionsDialog(QDialog):
     self.setLayout(grid)
     self.setWindowTitle("Опции NTRIP")
     self.setMinimumWidth(300)
+    self.setFixedSize(0, 0)

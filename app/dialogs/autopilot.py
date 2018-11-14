@@ -30,3 +30,4 @@ class AutopilotOptionsDialog(QDialog):
     self.setLayout(grid)
     self.setWindowTitle("Опции автопилота")
     self.setMinimumWidth(350)
+    self.setFixedSize(0, 0)

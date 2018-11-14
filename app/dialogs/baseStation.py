@@ -26,3 +26,4 @@ class BaseStationOptionsDialog(QDialog):
     self.setLayout(grid)
     self.setWindowTitle("Опции базовой станции")
     self.setMinimumWidth(300)
+    self.setFixedSize(0, 0)

@@ -12,7 +12,7 @@ from dialogs.NTRIP import *
 
 class MainWindow(QWidget):
 
-  # TODO: сделать разделение полей и индикацию
+  # TODO: сделать индикацию
 
   def __init__(self):
     
@@ -76,13 +76,26 @@ class MainWindow(QWidget):
   def showInputStreamOptions(self):
     index = self.inputStreamType.currentIndex()
     if index == 0:
-      BaseStationOptionsDialog().exec_()
+      dialog = BaseStationOptionsDialog()
+      if (dialog.exec_() == QDialog.Accepted):
+        print(dialog.serial.text())
+        print(dialog.baudrate.currentIndex())
     else:
       if index == 1:
-        NtripOptionsDialog().exec_()
+        dialog = NtripOptionsDialog()
+        if (dialog.exec_() == QDialog.Accepted):
+          print(dialog.ip.text())
+          print(dialog.port.text())
+          print(dialog.mountpoint.text())
+          print(dialog.user.text())
+          print(dialog.password.text())
 
   def showAutopilotOptions(self):
-    AutopilotOptionsDialog().exec_()
+    dialog = AutopilotOptionsDialog()
+    if (dialog.exec_() == QDialog.Accepted):
+      print(dialog.serial.text())
+      print(dialog.baudrate.currentIndex())
+      print(dialog.hub.text())
 
   def exit(self):
     self.close()
