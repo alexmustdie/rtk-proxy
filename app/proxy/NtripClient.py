@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import socket
 import sys
 import datetime
 import base64
+import signal
 import time
 from optparse import OptionParser
 
-import proto
+from proxy import proto
 
 version = 0.2
 useragent = 'NTRIP JCMBsoftPythonClient/%.1f' % version
@@ -26,6 +26,7 @@ class NtripClient(object):
   def __init__(self,
      buffer = 50,
      user = '',
+     password = '',
      out = sys.stdout,
      port = 2101,
      caster = '',
@@ -36,9 +37,9 @@ class NtripClient(object):
      verbose = False):
 
     self.buffer = buffer
-    self.user = base64.b64encode(user.encode()).decode()
+    self.user = base64.b64encode((user+":"+password).encode()).decode()
     self.out = out
-    self.port = port
+    self.port = int(port)
     self.caster = caster
     self.mountpoint = mountpoint
     self.setPosition(lat, lon)
@@ -110,6 +111,9 @@ class NtripClient(object):
     termRequest = True
 
   def readData(self, hub):
+
+    global termRequest
+    signal.signal(signal.SIGINT, self.terminateHandler)
 
     reconnectTry = 1
     sleepTime = 1
@@ -217,7 +221,7 @@ class NtripClient(object):
 
             sys.stderr.write('%s No Connection to NtripCaster.  Trying again in %i seconds\n' % (datetime.datetime.now(), sleepTime))
             time.sleep(sleepTime)
-            sleepTime *=  factor
+            sleepTime *= factor
 
             if sleepTime > maxReconnectTime:
               sleepTime = maxReconnectTime
@@ -229,39 +233,39 @@ class NtripClient(object):
         self.socket.close()
       sys.exit()
 
-if __name__ ==  '__main__':
+# if __name__ ==  '__main__':
 
-  ntripArgs = {}
+#   ntripArgs = {}
 
-  ntripArgs['lat'] = 50.09
-  ntripArgs['lon'] = 8.66
-  ntripArgs['height'] = 1200
-  ntripArgs['user'] = 'user1:123456'
-  ntripArgs['caster'] = '10.10.0.51'
-  ntripArgs['port'] = 2101
-  ntripArgs['mountpoint'] = 'sss'
-  ntripArgs['verbose'] = True
+#   ntripArgs['lat'] = 50.09
+#   ntripArgs['lon'] = 8.66
+#   ntripArgs['height'] = 1200
+#   ntripArgs['user'] = 'user1:123456'
+#   ntripArgs['caster'] = '10.10.0.51'
+#   ntripArgs['port'] = 2101
+#   ntripArgs['mountpoint'] = 'sss'
+#   ntripArgs['verbose'] = True
 
-  if ntripArgs['mountpoint'][0:1] != '/':
-    ntripArgs['mountpoint'] = '/' + ntripArgs['mountpoint']
+#   if ntripArgs['mountpoint'][0:1] != '/':
+#     ntripArgs['mountpoint'] = '/' + ntripArgs['mountpoint']
 
-  if ntripArgs['verbose']:
-    print('Server: ' + ntripArgs['caster'])
-    print('Port: ' + str(ntripArgs['port']))
-    print('User: ' + ntripArgs['user'])
-    print('mountpoint: ' + ntripArgs['mountpoint'])
-    print('Reconnects: ' + str(maxReconnect))
-    print('Max Connect Time: ' + str(maxConnectTime))
-    print()
+#   if ntripArgs['verbose']:
+#     print('Server: ' + ntripArgs['caster'])
+#     print('Port: ' + str(ntripArgs['port']))
+#     print('User: ' + ntripArgs['user'])
+#     print('mountpoint: ' + ntripArgs['mountpoint'])
+#     print('Reconnects: ' + str(maxReconnect))
+#     print('Max Connect Time: ' + str(maxConnectTime))
+#     print()
 
-  proto.verboseEnabled = True
-  stream = proto.SerialStream('/dev/ttyUSB0', 57600)
-  messenger = proto.Messenger(stream, 'cache')
-  messenger.connect()
-  time.sleep(2)
+#   proto.verboseEnabled = True
+#   stream = proto.SerialStream('/dev/ttyUSB0', 57600)
+#   messenger = proto.Messenger(stream, 'cache')
+#   messenger.connect()
+#   time.sleep(2)
 
-  if messenger.hub['Ublox'] is not None:
-    n = NtripClient(**ntripArgs)
-    n.readData(messenger.hub)
-  else:
-    print('Ublox not found')
+#   if messenger.hub['Ublox'] is not None:
+#     n = NtripClient(**ntripArgs)
+#     n.readData(messenger.hub)
+#   else:
+#     print('Ublox not found')

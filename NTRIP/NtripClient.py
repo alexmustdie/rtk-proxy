@@ -9,7 +9,6 @@ import sys
 import datetime
 import base64
 import time
-#import ssl
 from optparse import OptionParser
 
 

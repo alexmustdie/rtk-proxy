@@ -5,10 +5,10 @@ import sys
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from dialogs import autopilot, baseStation, NTRIP
 
-from dialogs.autopilot import *
-from dialogs.baseStation import *
-from dialogs.NTRIP import *
+from proxy import proto
+from proxy.NtripClient import NtripClient
 
 class MainWindow(QWidget):
 
@@ -17,6 +17,8 @@ class MainWindow(QWidget):
   def __init__(self):
     
     super(MainWindow, self).__init__()
+
+    self.ntripOptions = NTRIP.Options().serialize()
 
     grid = QGridLayout()
     grid.setSpacing(10)
@@ -60,6 +62,7 @@ class MainWindow(QWidget):
     # 4 row
 
     startButton = QPushButton('Запустить')
+    startButton.clicked.connect(self.start)
     grid.addWidget(startButton, 3, 0)
 
     stopButton = QPushButton('Остановить')
@@ -76,32 +79,55 @@ class MainWindow(QWidget):
   def showInputStreamOptions(self):
     index = self.inputStreamType.currentIndex()
     if index == 0:
-      dialog = BaseStationOptionsDialog()
+      dialog = baseStation.Options()
       if (dialog.exec_() == QDialog.Accepted):
         print(dialog.serial.text())
-        print(dialog.baudrate.currentIndex())
+        print(dialog.baudrate.currentText())
     else:
       if index == 1:
-        dialog = NtripOptionsDialog()
+        dialog = NTRIP.Options()
         if (dialog.exec_() == QDialog.Accepted):
-          print(dialog.ip.text())
-          print(dialog.port.text())
-          print(dialog.mountpoint.text())
-          print(dialog.user.text())
-          print(dialog.password.text())
+          self.ntripOptions = dialog.serialize()
 
   def showAutopilotOptions(self):
-    dialog = AutopilotOptionsDialog()
+    dialog = autopilot.Options()
     if (dialog.exec_() == QDialog.Accepted):
       print(dialog.serial.text())
-      print(dialog.baudrate.currentIndex())
+      print(dialog.baudrate.currentText())
       print(dialog.hub.text())
+
+  def start(self):
+
+    self.ntripOptions['lat'] = 50.09
+    self.ntripOptions['lon'] = 8.66
+    self.ntripOptions['height'] = 1200
+    self.ntripOptions['verbose'] = True
+
+    if self.ntripOptions['mountpoint'][0:1] != '/':
+      self.ntripOptions['mountpoint'] = '/' + self.ntripOptions['mountpoint']
+
+    if self.ntripOptions['verbose']:
+      print('Server: ' + self.ntripOptions['caster'])
+      print('Port: ' + str(self.ntripOptions['port']))
+      print('User: ' + self.ntripOptions['user'])
+      print('mountpoint: ' + self.ntripOptions['mountpoint'])
+      print()
+
+    proto.verboseEnabled = False
+    stream = proto.SerialStream('/dev/ttyUSB1', 57600)
+    messenger = proto.Messenger(stream, 'cache')
+    messenger.connect()
+
+    if messenger.hub['Ublox'] is not None:
+      n = NtripClient(**self.ntripOptions)
+      n.readData(messenger.hub)
+    else:
+      print('Ublox not found')
 
   def exit(self):
     self.close()
 
 if __name__ == '__main__':
-
   app = QApplication(sys.argv)
   window = MainWindow()
   window.show()

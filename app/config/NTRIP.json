@@ -1,0 +1,7 @@
+{
+  "caster": "10.10.0.51",
+  "port": "2101",
+  "mountpoint": "sss",
+  "user": "user1",
+  "password": "123456"
+}

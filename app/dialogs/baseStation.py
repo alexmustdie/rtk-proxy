@@ -1,20 +1,27 @@
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QComboBox, QDialogButtonBox
+from config import Config
 
-class BaseStationOptionsDialog(QDialog):
+class Options(QDialog):
 
   def __init__(self):
     
-    super(BaseStationOptionsDialog, self).__init__()
+    super(Options, self).__init__()
 
     grid = QGridLayout()
     grid.setSpacing(10)
 
-    self.serial = QLineEdit()
+    self.config = Config('config/baseStation.json')
+    fields = self.config.load()
+
+    self.serial = QLineEdit(fields['serial'])
     grid.addWidget(QLabel('Устройство COM-порта'), 1, 0)
     grid.addWidget(self.serial, 1, 1)
 
     self.baudrate = QComboBox()
     self.baudrate.addItems(['9600', '19200', '38400', '57600', '115200', '230400', '460800'])
+    index = self.baudrate.findText(fields['baudrate'])
+    if index >= 0:
+      self.baudrate.setCurrentIndex(index)
     grid.addWidget(QLabel('Скорость порта'), 2, 0)
     grid.addWidget(self.baudrate, 2, 1)
 
@@ -24,6 +31,12 @@ class BaseStationOptionsDialog(QDialog):
     grid.addWidget(buttonBox, 4, 0, 1, 0)
 
     self.setLayout(grid)
-    self.setWindowTitle("Опции базовой станции")
-    self.setMinimumWidth(300)
-    self.setFixedSize(0, 0)
+    self.setWindowTitle('Опции базовой станции')
+    self.setFixedSize(270, 0)
+
+  def accept(self):
+    self.config.save({
+      'serial': self.serial.text(),
+      'baudrate': self.baudrate.currentText()
+    })
+    super(Options, self).accept()
