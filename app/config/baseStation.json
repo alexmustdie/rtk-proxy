@@ -1,4 +1,4 @@
 {
-  "serial": "/dev/ttyUSB1",
-  "baudrate": "9600"
+  "serial": "/dev/ttyUSB0",
+  "baudrate": "57600"
 }

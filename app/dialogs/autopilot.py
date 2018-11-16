@@ -38,10 +38,13 @@ class Options(QDialog):
     self.setWindowTitle('Опции автопилота')
     self.setFixedSize(300, 0)
 
-  def accept(self):
-    self.config.save({
+  def serialize(self):
+    return {
       'serial': self.serial.text(),
       'baudrate': self.baudrate.currentText(),
       'hub': self.hub.text(),
-    })
+    }
+
+  def accept(self):
+    self.config.save(self.serialize())
     super(Options, self).accept()

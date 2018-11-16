@@ -34,9 +34,12 @@ class Options(QDialog):
     self.setWindowTitle('Опции базовой станции')
     self.setFixedSize(270, 0)
 
-  def accept(self):
-    self.config.save({
+  def serialize(self):
+    return {
       'serial': self.serial.text(),
       'baudrate': self.baudrate.currentText()
-    })
+    }
+
+  def accept(self):
+    self.config.save(self.serialize())
     super(Options, self).accept()

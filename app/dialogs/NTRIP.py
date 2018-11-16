@@ -13,9 +13,9 @@ class Options(QDialog):
     self.config = Config('config/NTRIP.json')
     fields = self.config.load()
 
-    self.caster = QLineEdit(fields['caster'])
+    self.server = QLineEdit(fields['server'])
     grid.addWidget(QLabel('IP'), 1, 0)
-    grid.addWidget(self.caster, 1, 1)
+    grid.addWidget(self.server, 1, 1)
 
     self.port = QLineEdit(fields['port'])
     grid.addWidget(QLabel('port'), 2, 0)
@@ -44,7 +44,7 @@ class Options(QDialog):
 
   def serialize(self):
     return {
-      'caster': self.caster.text(),
+      'server': self.server.text(),
       'port': self.port.text(),
       'mountpoint': self.mountpoint.text(),
       'user': self.user.text(),
