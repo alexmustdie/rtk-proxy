@@ -1,5 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QComboBox, QDialogButtonBox
+
 from config import Config
+from utils import getSerialPorts
 
 class Options(QDialog):
 
@@ -13,7 +15,11 @@ class Options(QDialog):
     self.config = Config('config/baseStation.json')
     fields = self.config.load()
 
-    self.serial = QLineEdit(fields['serial'])
+    self.serial = QComboBox()
+    self.serial.addItems(getSerialPorts())
+    index = self.serial.findText(fields['serial'])
+    if index >= 0:
+      self.serial.setCurrentIndex(index)
     grid.addWidget(QLabel('Устройство COM-порта'), 1, 0)
     grid.addWidget(self.serial, 1, 1)
 
@@ -36,7 +42,7 @@ class Options(QDialog):
 
   def serialize(self):
     return {
-      'serial': self.serial.text(),
+      'serial': self.serial.currentText(),
       'baudrate': self.baudrate.currentText()
     }
 

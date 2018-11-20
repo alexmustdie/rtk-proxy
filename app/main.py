@@ -2,24 +2,30 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import queue
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from dialogs import autopilot, baseStation, NTRIP
 
-from proxy import proto
-from proxy.NtripClient import NtripClient
+from dialogs import autopilot, baseStation, NTRIP
+from proxy.NtripClient import NtripClientThread
 
 class MainWindow(QWidget):
 
-  # TODO: сделать индикацию и кнопку остановки
+  # TODO: сделать индикацию, кнопку остановки и выбор COM-порта
 
   def __init__(self):
     
     super(MainWindow, self).__init__()
 
-    self.autopilotOptions = autopilot.Options().serialize()
+    self.inputStreamType = 0
+
+    self.baseStationThread = None
+    self.ntripClientThread = None
+
+    self.baseStationOptions = baseStation.Options().serialize()
     self.ntripOptions = NTRIP.Options().serialize()
+    self.autopilotOptions = autopilot.Options().serialize()
 
     grid = QGridLayout()
     grid.setSpacing(10)
@@ -42,9 +48,10 @@ class MainWindow(QWidget):
 
     grid.addWidget(QLabel('Входной'), 1, 0)
     
-    self.inputStreamType = QComboBox()
-    self.inputStreamType.addItems(['Базовая станция', 'NTRIP'])
-    grid.addWidget(self.inputStreamType, 1, 1)
+    inputStreamTypeComboBox = QComboBox()
+    inputStreamTypeComboBox.addItems(['Базовая станция', 'NTRIP'])
+    inputStreamTypeComboBox.currentIndexChanged.connect(self.onInputStreamTypeChanged)
+    grid.addWidget(inputStreamTypeComboBox, 1, 1)
 
     inputSreamOptionsButton = QPushButton('...')
     inputSreamOptionsButton.clicked.connect(self.showInputStreamOptions)
@@ -64,9 +71,10 @@ class MainWindow(QWidget):
     self.startButton.clicked.connect(self.start)
     grid.addWidget(self.startButton, 3, 0)
 
-    stopButton = QPushButton('Остановить')
-    stopButton.clicked.connect(self.stop)
-    grid.addWidget(stopButton, 3, 1)
+    self.stopButton = QPushButton('Остановить')
+    self.stopButton.setDisabled(True)
+    self.stopButton.clicked.connect(self.stop)
+    grid.addWidget(self.stopButton, 3, 1)
 
     exitButton = QPushButton('Выйти')
     exitButton.clicked.connect(self.exit)
@@ -75,70 +83,86 @@ class MainWindow(QWidget):
     self.setLayout(grid)
     self.setGeometry(300, 300, 0, 0)
     self.setFixedSize(0, 0)
+    self.setWindowTitle('RTK proxy')
+
+  def onInputStreamTypeChanged(self, index):
+    self.inputStreamType = index
 
   def showInputStreamOptions(self):
-    index = self.inputStreamType.currentIndex()
-    if index == 0:
+    if self.inputStreamType == 0:
       dialog = baseStation.Options()
       if (dialog.exec_() == QDialog.Accepted):
-        print(dialog.serial.text())
+        print(dialog.serial.currentText())
         print(dialog.baudrate.currentText())
     else:
-      if index == 1:
-        dialog = NTRIP.Options()
-        if (dialog.exec_() == QDialog.Accepted):
-          self.ntripOptions = dialog.serialize()
+      dialog = NTRIP.Options()
+      if (dialog.exec_() == QDialog.Accepted):
+        self.ntripOptions = dialog.serialize()
 
   def showAutopilotOptions(self):
     dialog = autopilot.Options()
     if (dialog.exec_() == QDialog.Accepted):
       self.autopilotOptions = dialog.serialize()
 
+  def showAlertBox(self, text):
+    alertBox = QMessageBox()
+    alertBox.setIcon(QMessageBox.Critical)
+    alertBox.setWindowTitle('Ошибка')
+    alertBox.setText(text)
+    alertBox.exec_()
+
   def start(self):
 
     self.startButton.setEnabled(False)
+    self.stopButton.setDisabled(False)
 
-    if self.ntripOptions['mountpoint'][0:1] != '/':
-      self.ntripOptions['mountpoint'] = '/' + self.ntripOptions['mountpoint']
+    try:
 
-    self.ntripOptions['lat'] = 50.09
-    self.ntripOptions['lon'] = 8.66
-    self.ntripOptions['height'] = 1200
-    self.ntripOptions['verbose'] = True
+      if self.inputStreamType == 0:
+        pass
+      else:
+        bucket = queue.Queue()
+        self.ntripClientThread = NtripClientThread(bucket, self.ntripOptions, self.autopilotOptions)
+        self.ntripClientThread.start()
 
-    if self.ntripOptions['verbose']:
-      print('server: ' + self.ntripOptions['server'])
-      print('port: ' + str(self.ntripOptions['port']))
-      print('user: ' + self.ntripOptions['user'])
-      print('mountpoint: ' + self.ntripOptions['mountpoint'])
-      print()
-      print('serial: ' + self.autopilotOptions['serial'])
-      print('baudrate: ' + self.autopilotOptions['baudrate'])
-      print('hub: ' + self.autopilotOptions['hub'])
-      print()
+        while True:
+          try:
+            exc = bucket.get(block=False)
+          except queue.Empty:
+            pass
+          else:
+            raise exc[1]
 
-    stream = proto.SerialStream(self.autopilotOptions['serial'], self.autopilotOptions['baudrate'])
+          self.ntripClientThread.join(0.1)
 
-    messenger = proto.Messenger(stream, 'cache')
-    messenger.connect()
-
-    proto.verboseEnabled = False
-
-    if messenger.hub[self.autopilotOptions['hub']] is not None:
-      ntripClient = NtripClient(**self.ntripOptions)
-      ntripClient.readData(messenger.hub)
-    else:
-      print('Ublox not found')
+          if self.ntripClientThread.isAlive():
+            continue
+          else:
+            break
+          
+    except Exception as e:
+      self.showAlertBox(str(e))
+      self.stop()
 
   def stop(self):
+    
     self.startButton.setEnabled(True)
-    print('stop clicked')
+    self.stopButton.setDisabled(True)
+
+    if self.inputStreamType == 0:
+      pass
+    else:
+      if self.ntripClientThread: self.ntripClientThread.kill()
 
   def exit(self):
+    self.stop()
     self.close()
 
 if __name__ == '__main__':
+
   app = QApplication(sys.argv)
+
   window = MainWindow()
   window.show()
+
   sys.exit(app.exec_())

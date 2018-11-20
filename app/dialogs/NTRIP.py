@@ -30,6 +30,7 @@ class Options(QDialog):
     grid.addWidget(self.user, 4, 1)
 
     self.password = QLineEdit(fields['password'])
+    self.password.setEchoMode(QLineEdit.Password)
     grid.addWidget(QLabel('password'), 5, 0)
     grid.addWidget(self.password, 5, 1)
     

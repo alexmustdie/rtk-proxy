@@ -980,6 +980,7 @@ class Field:
             self.component.messenger.invokeAsync(packet=request, callback=proxyCallback)
         else:
             response = self.component.messenger.invoke(packet=request, callback=proxyCallback)
+            # print(response)
             if response['id'] == Message.COMPONENT_FIELD:
                 return response['value']
             else:

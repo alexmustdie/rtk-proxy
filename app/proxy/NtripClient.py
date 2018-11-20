@@ -1,12 +1,61 @@
+import sys
 import socket
 import datetime
 import base64
 import time
 
+from threading import Thread
 from proxy import proto
 
-version = 0.2
-useragent = 'NTRIP JCMBsoftPythonClient/%.1f' % version
+class NtripClientThread(Thread):
+
+  def __init__(self, bucket, ntripOptions, autopilotOptions):
+    
+    Thread.__init__(self)
+
+    self.bucket = bucket
+
+    if ntripOptions['mountpoint'][0:1] != '/':
+      ntripOptions['mountpoint'] = '/' + ntripOptions['mountpoint']
+
+    ntripOptions['lat'] = 50.09
+    ntripOptions['lon'] = 8.66
+    ntripOptions['height'] = 1200
+    ntripOptions['verbose'] = True
+
+    if ntripOptions['verbose']:
+      print('server: ' + ntripOptions['server'])
+      print('port: ' + str(ntripOptions['port']))
+      print('user: ' + ntripOptions['user'])
+      print('mountpoint: ' + ntripOptions['mountpoint'])
+      print()
+      print('serial: ' + autopilotOptions['serial'])
+      print('baudrate: ' + autopilotOptions['baudrate'])
+      print('hub: ' + autopilotOptions['hub'])
+      print()
+
+    # stream = proto.SerialStream(autopilotOptions['serial'], autopilotOptions['baudrate'])
+
+    # self.messenger = proto.Messenger(stream, 'cache')
+    # self.messenger.connect()
+
+    # proto.verboseEnabled = False
+
+    # if self.messenger.hub[autopilotOptions['hub']]:
+    self.client = NtripClient(**ntripOptions)
+    # else:
+    #   raise Exception('Ublox not found')
+
+  def run(self):
+    try:
+      self.client.readData() # self.messenger.hub
+    except Exception as e:
+      self.bucket.put(sys.exc_info())
+
+  def kill(self):
+    self.client.terminate = True
+    # self.messenger.stop()
+    self.join()
 
 class NtripClient(object):
 
@@ -30,7 +79,7 @@ class NtripClient(object):
     self.setPosition(lat, lon)
     self.height = height
     self.verbose = verbose
-    self.socket = None
+    self.terminate = False
 
   def setPosition(self, lat, lon):
     
@@ -60,7 +109,7 @@ class NtripClient(object):
 
   def getMountPointString(self):
 
-    mountPointString = 'GET %s HTTP/1.1\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\n' % (self.mountpoint, useragent, self.user) + '\r\n'
+    mountPointString = 'GET %s HTTP/1.1\r\nUser-Agent: %s\r\nAuthorization: Basic %s\r\n' % (self.mountpoint, 'NTRIP JCMBsoftPythonClient/0.2', self.user) + '\r\n'
 
     if self.verbose:
       print(mountPointString)
@@ -89,19 +138,29 @@ class NtripClient(object):
 
     return '%02X' % xsum_calc
 
-  def readData(self, hub):
+  def readData(self): # hub
 
-    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self.socket.connect_ex((self.server, self.port))
-    self.socket.settimeout(10)
-    self.socket.sendall(self.getMountPointString().encode())
+    raise Exception('some exception')
 
-    while True:
+    conn = socket.socket()
+    conn.connect((self.server, self.port))
+    conn.settimeout(10)
+    conn.sendall(self.getMountPointString().encode())
 
-      response = self.socket.recv(4096)
+    while not self.terminate:
+
+      response = conn.recv(4096)
 
       if not response:
         break
+
+      for line in response.split(b'\r\n'):
+        if line.find(b'SOURCETABLE') >= 0:        raise Exception('Mount point does not exist')
+        elif line.find(b'401 Unauthorized') >= 0: raise Exception('Unauthorized request')
+        elif line.find(b'404 Not Found') >= 0:    raise Exception('Mount Point does not exist')
+        elif line.find(b'ICY 200 OK') >= 0:       conn.sendall(self.getGGAString().encode())
+        elif line.find(b'HTTP/1.0 200 OK') >= 0:  conn.sendall(self.getGGAString().encode())
+        elif line.find(b'HTTP/1.1 200 OK') >= 0:  conn.sendall(self.getGGAString().encode())
 
       while len(response) > 0:
 
@@ -111,11 +170,10 @@ class NtripClient(object):
 
         print(chunk)
 
-        packet = {'id': proto.Message.COMPONENT_RAW_DATA, 'component': hub['Ublox'].address, 'payload': chunk}
-        hub.messenger.invokeAsync(packet = packet, callback = None)
+        # packet = {'id': proto.Message.COMPONENT_RAW_DATA, 'component': hub['Ublox'].address, 'payload': chunk}
+        # hub.messenger.invokeAsync(packet = packet, callback = None)
 
     if self.verbose:
       print('Closing Connection\n')
-
-    self.socket.close()
-    self.socket = None
+    
+    conn.close()

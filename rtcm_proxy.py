@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sys
 import argparse
 import socket
 import signal
@@ -35,11 +36,15 @@ def runRtcmServer(hub, address='0.0.0.0', port=10081):
         if not data:
             break
         while len(data) > 0:
+            
             length = min(len(data), 32)
             chunk = data[:length]
             data = data[length:]
+            
             packet = {'id': proto.Message.COMPONENT_RAW_DATA, 'component': ublox.address, 'payload': chunk}
             hub.messenger.invokeAsync(packet=packet, callback=None)
+
+            print(ublox['status'].read())
 
     conn.close()
 

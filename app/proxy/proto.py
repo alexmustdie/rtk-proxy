@@ -58,8 +58,7 @@ class SerialStream:
         try:
             self.socket.open()
         except serial.SerialException as e:
-            print('Could not open serial port {:s}'.format(self.socket.portstr))
-            exit()
+            raise Exception('Could not open serial port {:s}'.format(self.socket.portstr))
 
     def __del__(self):
         self.socket.close()
@@ -69,8 +68,7 @@ class SerialStream:
             data = self.socket.read()
             return bytearray(data) if self.version == 2 else data
         except serial.SerialException:
-            print('Serial port error')
-            exit()
+            raise Exception('Serial port error')
 
     def write(self, data):
         self.socket.write(data)
@@ -88,8 +86,8 @@ class NetworkStream:
             if modemAddress is not None and modemPort is not None:
                 self.socket.sendall('{:d}:{:d}\n'.format(modemAddress, modemPort).encode())
         except:
-            print('Network connection failed')
-            exit()
+            raise Exception('Network connection failed')
+            
         self.version = sys.version_info[0]
 
     def __del__(self):
