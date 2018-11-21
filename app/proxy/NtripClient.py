@@ -1,19 +1,20 @@
-import sys
 import socket
 import datetime
 import base64
-import time
 
-from threading import Thread
+from PyQt5.QtCore import *
 from proxy import proto
 
-class NtripClientThread(Thread):
+class NtripClientThread(QThread):
 
-  def __init__(self, bucket, ntripOptions, autopilotOptions):
-    
-    Thread.__init__(self)
+  client = None
+  messenger = None
 
-    self.bucket = bucket
+  failed = pyqtSignal(str)
+
+  def __init__(self, ntripOptions, autopilotOptions):
+
+    QThread.__init__(self)
 
     if ntripOptions['mountpoint'][0:1] != '/':
       ntripOptions['mountpoint'] = '/' + ntripOptions['mountpoint']
@@ -23,39 +24,41 @@ class NtripClientThread(Thread):
     ntripOptions['height'] = 1200
     ntripOptions['verbose'] = True
 
+    self.device = autopilotOptions['device']
+
     if ntripOptions['verbose']:
       print('server: ' + ntripOptions['server'])
       print('port: ' + str(ntripOptions['port']))
       print('user: ' + ntripOptions['user'])
       print('mountpoint: ' + ntripOptions['mountpoint'])
-      print()
       print('serial: ' + autopilotOptions['serial'])
       print('baudrate: ' + autopilotOptions['baudrate'])
-      print('hub: ' + autopilotOptions['hub'])
+      print('device: ' + autopilotOptions['device'])
       print()
 
-    # stream = proto.SerialStream(autopilotOptions['serial'], autopilotOptions['baudrate'])
+    stream = proto.SerialStream(autopilotOptions['serial'], autopilotOptions['baudrate'])
 
-    # self.messenger = proto.Messenger(stream, 'cache')
-    # self.messenger.connect()
+    self.messenger = proto.Messenger(stream, 'cache')
+    self.messenger.connect()
 
-    # proto.verboseEnabled = False
+    proto.verboseEnabled = False
 
-    # if self.messenger.hub[autopilotOptions['hub']]:
-    self.client = NtripClient(**ntripOptions)
-    # else:
-    #   raise Exception('Ublox not found')
+    if self.messenger.hub[autopilotOptions['device']]:
+      self.client = NtripClient(**ntripOptions)
+      self.client.setDevice(autopilotOptions['device'])
+    else:
+      self.messenger.stop()
+      raise Exception('Ublox not found')
 
   def run(self):
     try:
-      self.client.readData() # self.messenger.hub
-    except Exception as e:
-      self.bucket.put(sys.exc_info())
+      self.client.readData(self.messenger.hub)
+    except Exception as exception:
+      self.failed.emit(str(exception))
 
   def kill(self):
     self.client.terminate = True
-    # self.messenger.stop()
-    self.join()
+    self.messenger.stop()
 
 class NtripClient(object):
 
@@ -81,8 +84,11 @@ class NtripClient(object):
     self.verbose = verbose
     self.terminate = False
 
+  def setDevice(self, device):
+    self.device = device
+
   def setPosition(self, lat, lon):
-    
+
     self.flagN = 'N'
     self.flagE = 'E'
 
@@ -138,9 +144,7 @@ class NtripClient(object):
 
     return '%02X' % xsum_calc
 
-  def readData(self): # hub
-
-    raise Exception('some exception')
+  def readData(self, hub):
 
     conn = socket.socket()
     conn.connect((self.server, self.port))
@@ -149,7 +153,7 @@ class NtripClient(object):
 
     while not self.terminate:
 
-      response = conn.recv(4096)
+      response = conn.recv(256)
 
       if not response:
         break
@@ -170,10 +174,10 @@ class NtripClient(object):
 
         print(chunk)
 
-        # packet = {'id': proto.Message.COMPONENT_RAW_DATA, 'component': hub['Ublox'].address, 'payload': chunk}
-        # hub.messenger.invokeAsync(packet = packet, callback = None)
+        packet = {'id': proto.Message.COMPONENT_RAW_DATA, 'component': hub[self.device].address, 'payload': chunk}
+        hub.messenger.invokeAsync(packet = packet, callback = None)
 
     if self.verbose:
       print('Closing Connection\n')
-    
+
     conn.close()

@@ -2,26 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import queue
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-from dialogs import autopilot, baseStation, NTRIP
+from dialogs import alert, autopilot, baseStation, NTRIP
 from proxy.NtripClient import NtripClientThread
 
 class MainWindow(QWidget):
 
-  # TODO: сделать индикацию, кнопку остановки и выбор COM-порта
+  # TODO: сделать индикацию, исключения из proto
+
+  inputStreamType = 0
+
+  baseStationThread = None
+  ntripClientThread = None
 
   def __init__(self):
     
     super(MainWindow, self).__init__()
-
-    self.inputStreamType = 0
-
-    self.baseStationThread = None
-    self.ntripClientThread = None
 
     self.baseStationOptions = baseStation.Options().serialize()
     self.ntripOptions = NTRIP.Options().serialize()
@@ -104,55 +103,40 @@ class MainWindow(QWidget):
     if (dialog.exec_() == QDialog.Accepted):
       self.autopilotOptions = dialog.serialize()
 
-  def showAlertBox(self, text):
-    alertBox = QMessageBox()
-    alertBox.setIcon(QMessageBox.Critical)
-    alertBox.setWindowTitle('Ошибка')
-    alertBox.setText(text)
-    alertBox.exec_()
+  def showAlertBox(self, message):
+    alert.Box(message).exec_()
+
+  def handleThreadException(self, message):
+    self.showAlertBox(message)
+    self.stop()
 
   def start(self):
 
     self.startButton.setEnabled(False)
-    self.stopButton.setDisabled(False)
+    self.stopButton.setEnabled(True)
 
     try:
 
       if self.inputStreamType == 0:
         pass
       else:
-        bucket = queue.Queue()
-        self.ntripClientThread = NtripClientThread(bucket, self.ntripOptions, self.autopilotOptions)
+        self.ntripClientThread = NtripClientThread(self.ntripOptions, self.autopilotOptions)
         self.ntripClientThread.start()
-
-        while True:
-          try:
-            exc = bucket.get(block=False)
-          except queue.Empty:
-            pass
-          else:
-            raise exc[1]
-
-          self.ntripClientThread.join(0.1)
-
-          if self.ntripClientThread.isAlive():
-            continue
-          else:
-            break
+        self.ntripClientThread.failed.connect(self.handleThreadException)
           
-    except Exception as e:
-      self.showAlertBox(str(e))
-      self.stop()
+    except Exception as exception:
+      self.handleThreadException(str(exception))
 
   def stop(self):
-    
+
     self.startButton.setEnabled(True)
-    self.stopButton.setDisabled(True)
+    self.stopButton.setEnabled(False)
 
     if self.inputStreamType == 0:
       pass
     else:
-      if self.ntripClientThread: self.ntripClientThread.kill()
+      if self.ntripClientThread:
+        self.ntripClientThread.kill()
 
   def exit(self):
     self.stop()

@@ -31,9 +31,9 @@ class Options(QDialog):
     grid.addWidget(QLabel('Скорость порта'), 2, 0)
     grid.addWidget(self.baudrate, 2, 1)
 
-    self.hub = QLineEdit(fields['hub'])
+    self.device = QLineEdit(fields['device'])
     grid.addWidget(QLabel('Имя устройства в автопилоте'), 3, 0)
-    grid.addWidget(self.hub, 3, 1)
+    grid.addWidget(self.device, 3, 1)
 
     buttonBox = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
     buttonBox.rejected.connect(self.reject)
@@ -48,7 +48,7 @@ class Options(QDialog):
     return {
       'serial': self.serial.currentText(),
       'baudrate': self.baudrate.currentText(),
-      'hub': self.hub.text(),
+      'device': self.device.text(),
     }
 
   def accept(self):

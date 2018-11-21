@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import binascii
 import copy
 import hashlib
@@ -58,7 +55,8 @@ class SerialStream:
         try:
             self.socket.open()
         except serial.SerialException as e:
-            raise Exception('Could not open serial port {:s}'.format(self.socket.portstr))
+            print('Could not open serial port {:s}'.format(self.socket.portstr))
+            exit()
 
     def __del__(self):
         self.socket.close()
@@ -68,7 +66,8 @@ class SerialStream:
             data = self.socket.read()
             return bytearray(data) if self.version == 2 else data
         except serial.SerialException:
-            raise Exception('Serial port error')
+            print('Serial port error')
+            exit()
 
     def write(self, data):
         self.socket.write(data)
@@ -86,8 +85,8 @@ class NetworkStream:
             if modemAddress is not None and modemPort is not None:
                 self.socket.sendall('{:d}:{:d}\n'.format(modemAddress, modemPort).encode())
         except:
-            raise Exception('Network connection failed')
-            
+            print('Network connection failed')
+            exit()
         self.version = sys.version_info[0]
 
     def __del__(self):
@@ -978,6 +977,7 @@ class Field:
             self.component.messenger.invokeAsync(packet=request, callback=proxyCallback)
         else:
             response = self.component.messenger.invoke(packet=request, callback=proxyCallback)
+            # print(response)
             if response['id'] == Message.COMPONENT_FIELD:
                 return response['value']
             else:

@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import sys
 import glob
 import serial
@@ -27,6 +24,3 @@ def getSerialPorts():
       pass
 
   return result
-
-if __name__ == '__main__':
-  print(serial_ports())
