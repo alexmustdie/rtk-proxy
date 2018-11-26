@@ -11,8 +11,6 @@ from proxy.NtripClient import NtripClientThread
 
 class MainWindow(QWidget):
 
-  # TODO: сделать индикацию, исключения из proto
-
   inputStreamType = 0
 
   baseStationThread = None
@@ -33,15 +31,16 @@ class MainWindow(QWidget):
 
     streamLabel = QLabel('Поток')
     grid.addWidget(streamLabel, 0, 0)
-    streamLabel.setAlignment(Qt.AlignCenter)
 
     typeLabel = QLabel('Тип')
     grid.addWidget(typeLabel, 0, 1)
-    typeLabel.setAlignment(Qt.AlignCenter)
 
     optionsLabel = QLabel('Опции')
     grid.addWidget(optionsLabel, 0, 2)
-    optionsLabel.setAlignment(Qt.AlignCenter)
+
+    for widget in (streamLabel, typeLabel, optionsLabel):
+      widget.setStyleSheet("padding:5;background-color:lightgray;");
+      widget.setAlignment(Qt.AlignCenter)
 
     # 2 row
 
@@ -66,22 +65,38 @@ class MainWindow(QWidget):
 
     # 4 row
 
+    self.deviceStatusLabel = QLabel('Статус устройства')
+    self.deviceStatusLabel.setFixedSize(330, 45)
+    self.deviceStatusLabel.setStyleSheet("padding:5;background-color:lightgray;");
+    self.deviceStatusLabel.setWordWrap(True)
+    grid.addWidget(self.deviceStatusLabel, 3, 0, 1, 3)
+
+    # 5 row
+
+    self.progressBar = QProgressBar(self)
+    self.progressBar.setFixedSize(330, 10)
+    self.progressBar.setTextVisible(False)
+    grid.addWidget(self.progressBar, 4, 0, 1, 3)
+
+    # 6 row
+
     self.startButton = QPushButton('Запустить')
     self.startButton.clicked.connect(self.start)
-    grid.addWidget(self.startButton, 3, 0)
+    grid.addWidget(self.startButton, 5, 0)
 
     self.stopButton = QPushButton('Остановить')
     self.stopButton.setDisabled(True)
     self.stopButton.clicked.connect(self.stop)
-    grid.addWidget(self.stopButton, 3, 1)
+    grid.addWidget(self.stopButton, 5, 1)
 
     exitButton = QPushButton('Выйти')
     exitButton.clicked.connect(self.exit)
-    grid.addWidget(exitButton, 3, 2)
+    grid.addWidget(exitButton, 5, 2)
+
+    # rows end
     
     self.setLayout(grid)
-    self.setGeometry(300, 300, 0, 0)
-    self.setFixedSize(0, 0)
+    self.setFixedSize(350, 0)
     self.setWindowTitle('RTK proxy')
 
   def onInputStreamTypeChanged(self, index):
@@ -106,6 +121,12 @@ class MainWindow(QWidget):
   def showAlertBox(self, message):
     alert.Box(message).exec_()
 
+  def updateDeviceStatus(self, status):
+    self.deviceStatusLabel.setText(status)
+
+  def setProgressBarValue(self, progress):
+    self.progressBar.setValue(progress)
+
   def handleThreadException(self, message):
     self.showAlertBox(message)
     self.stop()
@@ -122,6 +143,8 @@ class MainWindow(QWidget):
       else:
         self.ntripClientThread = NtripClientThread(self.ntripOptions, self.autopilotOptions)
         self.ntripClientThread.start()
+        self.ntripClientThread.deviceStatus.connect(self.updateDeviceStatus)
+        self.ntripClientThread.progress.connect(self.setProgressBarValue)
         self.ntripClientThread.failed.connect(self.handleThreadException)
           
     except Exception as exception:
@@ -131,6 +154,8 @@ class MainWindow(QWidget):
 
     self.startButton.setEnabled(True)
     self.stopButton.setEnabled(False)
+    
+    self.deviceStatusLabel.setText('Статус устройства')
 
     if self.inputStreamType == 0:
       pass
