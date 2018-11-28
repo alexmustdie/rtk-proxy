@@ -6,10 +6,13 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-from dialogs import *
+from UI.AlertBox import AlertBox
+from UI.BaseStationOptionsDialog import BaseStationOptionsDialog
+from UI.NtripOptionsDialog import NtripOptionsDialog
+from UI.AutopilotOptionsDialog import AutopilotOptionsDialog
 
-from proxy.BaseStation import BaseStation
-from proxy.Ntrip import Ntrip
+from logic.BaseStation import BaseStation
+from logic.Ntrip import Ntrip
 
 class MainWindow(QWidget):
 
@@ -20,9 +23,9 @@ class MainWindow(QWidget):
     
     super(MainWindow, self).__init__()
 
-    self.baseStationOptions = BaseStationOptions().serialize()
-    self.ntripOptions = NtripOptions().serialize()
-    self.autopilotOptions = AutopilotOptions().serialize()
+    self.baseStationOptions = BaseStationOptionsDialog().serialize()
+    self.ntripOptions = NtripOptionsDialog().serialize()
+    self.autopilotOptions = AutopilotOptionsDialog().serialize()
 
     grid = QGridLayout()
     grid.setSpacing(10)
@@ -109,16 +112,16 @@ class MainWindow(QWidget):
 
   def showInputClientOptions(self):
     if self.inputClientType == 0:
-      dialog = BaseStationOptions()
+      dialog = BaseStationOptionsDialog()
       if (dialog.exec_() == QDialog.Accepted):
         self.baseStationOptions = dialog.serialize()
     else:
-      dialog = NtripOptions()
+      dialog = NtripOptionsDialog()
       if (dialog.exec_() == QDialog.Accepted):
         self.ntripOptions = dialog.serialize()
 
   def showOutputClientOptions(self):
-    dialog = AutopilotOptions()
+    dialog = AutopilotOptionsDialog()
     if (dialog.exec_() == QDialog.Accepted):
       self.autopilotOptions = dialog.serialize()
 
