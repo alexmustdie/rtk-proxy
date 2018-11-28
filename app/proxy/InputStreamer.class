@@ -1,0 +1,56 @@
+from PyQt5.QtCore import pyqtSignal, QThread
+
+class InputStreamer(QThread):
+
+  in = None
+  out = None
+
+  deviceStatus = pyqtSignal(str)
+  bytesCount = pyqtSignal(int)
+  failed = pyqtSignal(str)
+
+  def __init__(self, baseStationOptions, autopilotOptions):
+
+    QThread.__init__(self)
+
+    stream = proto.SerialStream(autopilotOptions['serial'], autopilotOptions['baudrate'])
+
+    self.out = proto.out(stream, 'cache')
+    self.out.connect()
+
+    proto.verboseEnabled = False
+
+    device = self.out.hub[autopilotOptions['device']]
+
+    if device:
+      self.in = BaseStationin(**baseStationOptions)
+      self.in.setDevice(device)
+    else:
+      self.out.stop()
+      raise Exception('Ublox not found')
+
+  def runDeviceStatusHandler(self):
+    self.deviceStatusHandler = DeviceStatusHandler.DeviceStatusHandler(self.in.device)
+    self.deviceStatusHandler.start()
+    self.deviceStatusHandler.status.connect(self.sendDeviceStatus)
+
+  def sendDeviceStatus(self, status):
+    self.deviceStatus.emit(status)
+
+  def sendBytesCount(self, bytesCount):
+    self.bytesCount.emit(bytesCount)
+
+  def run(self):
+
+    runDeviceStatusHandler()
+
+    try:
+      self.in.bytesCount.connect(self.sendBytesCount)
+      self.in.readData(self.out.hub)
+    except Exception as exception:
+      self.failed.emit(str(exception))
+
+  def kill(self):
+    self.deviceStatusHandler.terminate = True
+    self.in.terminate = True
+    self.out.stop()

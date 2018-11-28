@@ -11,6 +11,8 @@ import sys
 import threading
 import time
 
+from PyQt5.QtCore import pyqtSignal, QThread, QObject
+
 debugEnabled, verboseEnabled = False, False
 textMutex = threading.Lock()
 
@@ -55,8 +57,7 @@ class SerialStream:
         try:
             self.socket.open()
         except serial.SerialException as e:
-            print('Could not open serial port {:s}'.format(self.socket.portstr))
-            exit()
+            raise Exception('Could not open serial port {:s}'.format(self.socket.portstr))
 
     def __del__(self):
         self.socket.close()
@@ -66,8 +67,7 @@ class SerialStream:
             data = self.socket.read()
             return bytearray(data) if self.version == 2 else data
         except serial.SerialException:
-            print('Serial port error')
-            exit()
+            raise Exception('Serial port error')
 
     def write(self, data):
         self.socket.write(data)
@@ -85,8 +85,7 @@ class NetworkStream:
             if modemAddress is not None and modemPort is not None:
                 self.socket.sendall('{:d}:{:d}\n'.format(modemAddress, modemPort).encode())
         except:
-            print('Network connection failed')
-            exit()
+            raise Exception('Network connection failed')
         self.version = sys.version_info[0]
 
     def __del__(self):
@@ -790,7 +789,7 @@ class Protocol:
                     return struct.pack(typeFormat, *package)
 
 
-class StreamHandler:
+class StreamHandler(QObject):
     inputParsers = {
             Message.PARAM_INFO:                    Message.parseParamInfo,
             Message.PARAM:                         Message.parseParam,
@@ -832,7 +831,21 @@ class StreamHandler:
             Message.COMPONENT_RAW_DATA:       Message.makeComponentRawData
     }
 
+    failed = pyqtSignal(Exception)
+
+    class StreamHandlerThread(QThread):
+
+        def __init__(self, streamHandler):
+            QThread.__init__(self)
+            self.streamHandler = streamHandler
+
+        def run(self):
+            self.streamHandler.run()
+
     def __init__(self, stream):
+
+        QObject.__init__(self)
+
         self.parser = Parser()
         self.stream = stream
         self.callbacks = []
@@ -845,7 +858,7 @@ class StreamHandler:
         self.rx, self.tx = 0, 0
 
         self.terminate = False
-        self.thread = threading.Thread(target=self.run)
+        self.thread = StreamHandler.StreamHandlerThread(self)
         self.thread.start()
 
     def getMessageCounters(self):
@@ -875,35 +888,40 @@ class StreamHandler:
 
     def stop(self):
         self.terminate = True
-        self.thread.join()
+        # self.thread.join()
 
     def run(self):
-        timestamp = time.time()
 
-        while not self.terminate:
-            data = self.stream.read()
+        try:
 
-            self.rx += len(data)
-            while len(data) > 0:
-                count = self.parser.process(data)
-                data = data[count:]
+            timestamp = time.time()
 
-                if self.parser.state == Parser.State.DONE:
-                    ident, payload = self.parser.packet.id, self.parser.packet.data
-                    if ident in StreamHandler.inputParsers:
-                        self.stats[ident] += 1
-                        fields = StreamHandler.inputParsers[ident](payload)
-                        debug('RX: ' + str(fields))
-                        for callback in self.callbacks:
-                            callback(fields)
-                    else:
-                        debug('RX: unknown message, class {:02X}, length {:d}'.format(ident, len(payload)))
+            while not self.terminate:
+                data = self.stream.read()
 
-            if time.time() > timestamp + 1.0:
-                self.rates = ([(self.rx, self.tx)] + self.rates)[:60]
-                self.rx, self.tx = 0, 0
-                timestamp = time.time()
+                self.rx += len(data)
+                while len(data) > 0:
+                    count = self.parser.process(data)
+                    data = data[count:]
 
+                    if self.parser.state == Parser.State.DONE:
+                        ident, payload = self.parser.packet.id, self.parser.packet.data
+                        if ident in StreamHandler.inputParsers:
+                            self.stats[ident] += 1
+                            fields = StreamHandler.inputParsers[ident](payload)
+                            debug('RX: ' + str(fields))
+                            for callback in self.callbacks:
+                                callback(fields)
+                        else:
+                            debug('RX: unknown message, class {:02X}, length {:d}'.format(ident, len(payload)))
+
+                if time.time() > timestamp + 1.0:
+                    self.rates = ([(self.rx, self.tx)] + self.rates)[:60]
+                    self.rx, self.tx = 0, 0
+                    timestamp = time.time()
+
+        except Exception as exception:
+            self.failed.emit(exception)
 
 class Field:
     READABLE, WRITABLE, IMPORTANT = 0x01, 0x02, 0x04
@@ -1843,7 +1861,10 @@ class Hub:
         return self.messenger.handler.getMessageStats()
 
 
-class Messenger:
+class Messenger(QObject):
+
+    failed = pyqtSignal(Exception)
+
     class CommandState:
         def __init__(self):
             self.sem = threading.Semaphore(0)
@@ -1930,8 +1951,19 @@ class Messenger:
             if self.callback is not None:
                 self.callback(self.stream, result)
 
+    class MessangerThread(QThread):
+
+        def __init__(self, messenger):
+            QThread.__init__(self)
+            self.messenger = messenger
+
+        def run(self):
+            self.messenger.run()
 
     def __init__(self, stream, cache=None):
+
+        QObject.__init__(self)
+
         self.terminate = False
         self.requests = []
         self.requestSem = threading.Condition(threading.Lock())
@@ -1948,7 +1980,7 @@ class Messenger:
 
         self.handler = StreamHandler(stream)
         self.hub = Hub(self, cache)
-        self.thread = threading.Thread(target=self.run)
+        self.thread = Messenger.MessangerThread(self)
         self.thread.start()
 
     def __getitem__(self, item):
@@ -1974,7 +2006,7 @@ class Messenger:
         self.handler.stop()
 
         self.terminate = True
-        self.thread.join()
+        # self.thread.join()
 
     def invoke(self, packet, callback=None, retries=None, timeout=None):
         if callback is None:
@@ -2038,15 +2070,18 @@ class Messenger:
             return (1.0, 0, 0)
 
     def run(self):
-        while not self.terminate:
-            with self.requestSem:
-                self.requestSem.wait(0.1)
+        try:
+            while not self.terminate:
+                with self.requestSem:
+                    self.requestSem.wait(0.1)
 
-            while len(self.requests) > 0:
-                self.currentRequest = self.requests[0]
-                self.requests = self.requests[1:]
-                self.currentRequest.handle()
-                self.currentRequest = None
+                while len(self.requests) > 0:
+                    self.currentRequest = self.requests[0]
+                    self.requests = self.requests[1:]
+                    self.currentRequest.handle()
+                    self.currentRequest = None
+        except Exception as exception:
+            self.failed.emit(exception)
 
     @staticmethod
     def messageCallback(state, callback, fields):
