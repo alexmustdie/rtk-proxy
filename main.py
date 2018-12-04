@@ -16,11 +16,13 @@ from logic.Ntrip import Ntrip
 
 class MainWindow(QWidget):
 
+  deviceStatusLabelDefaultText = 'Статус устройства'
+
   inputClientType = 0
   inputClientThread = None
 
   def __init__(self):
-    
+
     super(MainWindow, self).__init__()
 
     self.baseStationOptions = BaseStationOptionsDialog().serialize()
@@ -80,7 +82,7 @@ class MainWindow(QWidget):
 
     # 4 row
 
-    self.deviceStatusLabel = QLabel('Статус устройства')
+    self.deviceStatusLabel = QLabel(self.deviceStatusLabelDefaultText)
     self.deviceStatusLabel.setStyleSheet("padding:5;background-color:lightgray;");
     self.deviceStatusLabel.setWordWrap(True)
     self.deviceStatusLabel.setFixedSize(400, 45)
@@ -164,7 +166,7 @@ class MainWindow(QWidget):
 
     self.startButton.setEnabled(True)
     self.stopButton.setEnabled(False)
-    self.deviceStatusLabel.setText('Статус устройства')
+    self.deviceStatusLabel.setText(self.deviceStatusLabelDefaultText)
     
     if self.inputClientThread:
       self.inputClientThread.kill()
