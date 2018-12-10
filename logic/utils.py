@@ -1,12 +1,13 @@
 import serial.tools.list_ports
+import re
 
 def getSerialPorts():
 
-  comPorts = serial.tools.list_ports.comports()
-
+  ports = serial.tools.list_ports.comports()
   result = []
 
-  for comPort in comPorts:
-    result.append(comPort.device)
+  for port in ports:
+    if not re.match(r'^\/dev\/ttyS[0-3]$', port.device):
+      result.append(port.device)
 
   return result

@@ -1,0 +1,4 @@
+__pycache__/
+cache/
+logic/__pycache__/
+UI/__pycache__/

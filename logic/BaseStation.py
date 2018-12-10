@@ -31,7 +31,7 @@ class BaseStation:
 
       try:
         self.conn.open()
-      except serial.SerialException as e:
+      except:
         raise Exception('Could not open serial port ' + self.conn.portstr)
 
     def readData(self, hub):

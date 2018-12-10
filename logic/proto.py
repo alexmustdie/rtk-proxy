@@ -920,8 +920,8 @@ class StreamHandler(QObject):
                     self.rx, self.tx = 0, 0
                     timestamp = time.time()
 
-        except Exception as exception:
-            self.failed.emit(exception)
+        except Exception as e:
+            self.failed.emit(e)
 
 class Field:
     READABLE, WRITABLE, IMPORTANT = 0x01, 0x02, 0x04

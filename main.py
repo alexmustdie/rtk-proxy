@@ -6,7 +6,6 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-from UI.AlertBox import AlertBox
 from UI.BaseStationOptionsDialog import BaseStationOptionsDialog
 from UI.NtripOptionsDialog import NtripOptionsDialog
 from UI.AutopilotOptionsDialog import AutopilotOptionsDialog
@@ -127,9 +126,6 @@ class MainWindow(QWidget):
     if (dialog.exec_() == QDialog.Accepted):
       self.autopilotOptions = dialog.serialize()
 
-  def showAlertBox(self, message):
-    AlertBox(message).exec_()
-
   def updateDeviceStatus(self, status):
     self.deviceStatusLabel.setText(status)
 
@@ -138,8 +134,8 @@ class MainWindow(QWidget):
     self.inputClientBytesCountLabel.setText(bytesCount)
     self.outputClientBytesCountLabel.setText(bytesCount)
 
-  def handleThreadException(self, exception):
-    self.showAlertBox(str(exception))
+  def handleThreadException(self, e):
+    QMessageBox.critical(self, 'Ошибка', str(e))
     self.stop()
 
   def start(self):
@@ -159,8 +155,8 @@ class MainWindow(QWidget):
       self.inputClientThread.failed.connect(self.handleThreadException)
       self.inputClientThread.start()
 
-    except Exception as exception:
-      self.handleThreadException(exception)
+    except Exception as e:
+      self.handleThreadException(e)
 
   def stop(self):
 

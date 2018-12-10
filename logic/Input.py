@@ -43,17 +43,17 @@ class Thread(QThread):
   def sendBytesCount(self, bytesCount):
     self.bytesCount.emit(bytesCount)
 
-  def raiseException(self, exception):
+  def raiseException(self, e):
     self.kill()
-    self.failed.emit(exception)
+    self.failed.emit(e)
 
   def run(self):
     try:
       self.runDeviceStatusChecker()
       self.inputClient.bytesCount.connect(self.sendBytesCount)
       self.inputClient.readData(self.outputClient.hub)
-    except Exception as exception:
-      self.raiseException(exception)
+    except Exception as e:
+      self.raiseException(e)
 
   def kill(self):
     self.deviceStatusChecker.terminate = True
