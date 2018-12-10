@@ -9,7 +9,7 @@ class Ntrip:
 
   class Thread(Input.Thread):
 
-    def __init__(self, ntripOptions, autopilotOptions):
+    def __init__(self, ntripOptions, outputStream):
 
       super().__init__()
 
@@ -17,7 +17,7 @@ class Ntrip:
         ntripOptions['mountpoint'] = '/' + ntripOptions['mountpoint']
 
       self.inputClient = Ntrip.Client(**ntripOptions)
-      self.connectOutputClient(autopilotOptions)
+      self.connectOutputClient(outputStream)
 
   class Client(Input.Client):
 

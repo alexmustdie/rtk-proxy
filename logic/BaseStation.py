@@ -7,12 +7,12 @@ class BaseStation:
 
   class Thread(Input.Thread):
 
-    def __init__(self, baseStationOptions, autopilotOptions):
+    def __init__(self, baseStationOptions, outputClientOptions):
 
       super().__init__()
 
       self.inputClient = BaseStation.Client(**baseStationOptions)
-      self.connectOutputClient(autopilotOptions)
+      self.connectOutputClient(outputClientOptions)
 
   class Client(Input.Client):
 
@@ -23,8 +23,8 @@ class BaseStation:
       self.conn = Serial()
       self.conn.port = serial
       self.conn.baudrate = baudrate
-      self.conn.parity  = 'N'
-      self.conn.rtscts  = False
+      self.conn.parity = 'N'
+      self.conn.rtscts = False
       self.conn.xonxoff = False
       self.conn.timeout = 0.01
       self.version = sys.version_info[0]

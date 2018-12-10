@@ -9,9 +9,12 @@ from PyQt5.QtCore import *
 from UI.BaseStationOptionsDialog import BaseStationOptionsDialog
 from UI.NtripOptionsDialog import NtripOptionsDialog
 from UI.AutopilotOptionsDialog import AutopilotOptionsDialog
+from UI.ModemOptionsDialog import ModemOptionsDialog
 
 from logic.BaseStation import BaseStation
 from logic.Ntrip import Ntrip
+
+from logic.Output import Autopilot, Modem
 
 class MainWindow(QWidget):
 
@@ -20,6 +23,8 @@ class MainWindow(QWidget):
   inputClientType = 0
   inputClientThread = None
 
+  outputClientType = 0
+
   def __init__(self):
 
     super(MainWindow, self).__init__()
@@ -27,6 +32,7 @@ class MainWindow(QWidget):
     self.baseStationOptions = BaseStationOptionsDialog().serialize()
     self.ntripOptions = NtripOptionsDialog().serialize()
     self.autopilotOptions = AutopilotOptionsDialog().serialize()
+    self.modemOptions = ModemOptionsDialog().serialize()
 
     grid = QGridLayout()
     grid.setSpacing(10)
@@ -69,7 +75,11 @@ class MainWindow(QWidget):
     # 3 row
 
     grid.addWidget(QLabel('Выход'), 2, 0)
-    grid.addWidget(QLabel('Aвтопилот'), 2, 1)
+    
+    outputClientTypeComboBox = QComboBox()
+    outputClientTypeComboBox.addItems(['Автопилот', 'Модем'])
+    outputClientTypeComboBox.currentIndexChanged.connect(self.onOutputClientTypeChanged)
+    grid.addWidget(outputClientTypeComboBox, 2, 1)
     
     outputClientOptionsButton = QPushButton('...')
     outputClientOptionsButton.clicked.connect(self.showOutputClientOptions)
@@ -114,17 +124,25 @@ class MainWindow(QWidget):
   def showInputClientOptions(self):
     if self.inputClientType == 0:
       dialog = BaseStationOptionsDialog()
-      if (dialog.exec_() == QDialog.Accepted):
+      if dialog.exec_() == QDialog.Accepted:
         self.baseStationOptions = dialog.serialize()
     else:
       dialog = NtripOptionsDialog()
-      if (dialog.exec_() == QDialog.Accepted):
+      if dialog.exec_() == QDialog.Accepted:
         self.ntripOptions = dialog.serialize()
 
+  def onOutputClientTypeChanged(self, index):
+    self.outputClientType = index
+
   def showOutputClientOptions(self):
-    dialog = AutopilotOptionsDialog()
-    if (dialog.exec_() == QDialog.Accepted):
-      self.autopilotOptions = dialog.serialize()
+    if self.outputClientType == 0:
+      dialog = AutopilotOptionsDialog()
+      if dialog.exec_() == QDialog.Accepted:
+        self.autopilotOptions = dialog.serialize()
+    else:
+      dialog = ModemOptionsDialog()
+      if dialog.exec_() == QDialog.Accepted:
+        self.modemOptions = dialog.serialize()
 
   def updateDeviceStatus(self, status):
     self.deviceStatusLabel.setText(status)
@@ -145,10 +163,15 @@ class MainWindow(QWidget):
 
     try:
 
-      if self.inputClientType == 0:
-        self.inputClientThread = BaseStation.Thread(self.baseStationOptions, self.autopilotOptions)
+      if self.outputClientType == 0:
+        outputClientOptions = Autopilot(**self.autopilotOptions)
       else:
-        self.inputClientThread = Ntrip.Thread(self.ntripOptions, self.autopilotOptions)
+        outputClientOptions = Modem(**self.modemOptions)
+
+      if self.inputClientType == 0:
+        self.inputClientThread = BaseStation.Thread(self.baseStationOptions, outputClientOptions)
+      else:
+        self.inputClientThread = Ntrip.Thread(self.ntripOptions, outputClientOptions)
 
       self.inputClientThread.deviceStatus.connect(self.updateDeviceStatus)
       self.inputClientThread.bytesCount.connect(self.updateBytesCount)

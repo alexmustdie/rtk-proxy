@@ -24,7 +24,7 @@ class AutopilotOptionsDialog(OptionsDialog):
     self.addRow('Скорость порта', self.baudrate)
 
     self.device = QLineEdit(fields['device'])
-    self.addRow('Имя устройства в автопилоте', self.device)
+    self.addRow('Имя устройства', self.device)
 
     self.addButtonBox()
     self.setFixedSize(300, 0)

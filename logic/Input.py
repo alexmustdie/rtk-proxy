@@ -15,16 +15,14 @@ class Thread(QThread):
 
   def connectOutputClient(self, outputClientOptions):
 
-    stream = proto.SerialStream(outputClientOptions['serial'], outputClientOptions['baudrate'])
-
-    self.outputClient = proto.Messenger(stream, 'cache')
+    self.outputClient = proto.Messenger(outputClientOptions.getStream(), 'cache')
 
     self.outputClient.failed.connect(self.raiseException)
     self.outputClient.handler.failed.connect(self.raiseException)
 
     self.outputClient.connect()
 
-    device = self.outputClient.hub[outputClientOptions['device']]
+    device = self.outputClient.hub[outputClientOptions.device]
 
     if device:
       self.inputClient.device = device
