@@ -1,7 +1,7 @@
 {
   "address": "127.0.0.1",
-  "port": "5500",
-  "modemAddress": "1",
-  "modemPort": "1",
-  "device": "Ublox"
+  "port": 5500,
+  "modemAddress": 1,
+  "modemPort": 1,
+  "device": 7
 }

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QDialogButtonBox
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QDialogButtonBox, QMessageBox
 from logic.config import Config
 
 class OptionsDialog(QDialog):
@@ -28,5 +28,8 @@ class OptionsDialog(QDialog):
     self.grid.addWidget(buttonBox, self.rowsCount, 0, 1, 0)
 
   def accept(self):
-    self.config.save(self.serialize())
-    super().accept()
+    try:
+      self.config.save(self.serialize())
+      super().accept()
+    except Exception as e:
+      QMessageBox.critical(self, 'Ошибка', str(e))

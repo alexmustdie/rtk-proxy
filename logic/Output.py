@@ -14,9 +14,9 @@ class Modem:
 
   def __init__(self, address, port, modemAddress, modemPort, device):
     self.address = address
-    self.port = int(port)
-    self.modemAddress = int(modemAddress)
-    self.modemPort = int(modemPort)
+    self.port = port
+    self.modemAddress = modemAddress
+    self.modemPort = modemPort
     self.device = device
 
   def getStream(self):

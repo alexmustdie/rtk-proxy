@@ -15,19 +15,26 @@ class BaseStationOptionsDialog(OptionsDialog):
     self.serial.addItems(getSerialPorts())
     index = self.serial.findText(fields['serial'])
     if index >= 0: self.serial.setCurrentIndex(index)
-    self.addRow('Устройство COM-порта', self.serial)
+    self.addRow('COM-порт', self.serial)
 
     self.baudrate = QComboBox()
     self.baudrate.addItems(['9600', '19200', '38400', '57600', '115200', '230400', '460800'])
-    index = self.baudrate.findText(fields['baudrate'])
+    index = self.baudrate.findText(str(fields['baudrate']))
     if index >= 0: self.baudrate.setCurrentIndex(index)
     self.addRow('Скорость порта', self.baudrate)
 
     self.addButtonBox()
-    self.setFixedSize(270, 0)
+    self.setFixedSize(250, 0)
 
   def serialize(self):
+
+    serial = self.serial.currentText()
+    baudrate = self.baudrate.currentText()
+
+    if not serial:
+      raise Exception('Не указан COM-порт')
+
     return {
-      'serial': self.serial.currentText(),
-      'baudrate': self.baudrate.currentText()
+      'serial': serial,
+      'baudrate': int(baudrate)
     }

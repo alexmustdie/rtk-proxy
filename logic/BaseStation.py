@@ -7,12 +7,12 @@ class BaseStation:
 
   class Thread(Input.Thread):
 
-    def __init__(self, baseStationOptions, outputClientOptions):
+    def __init__(self, baseStationOptions, outputClientStream):
 
       super().__init__()
 
       self.inputClient = BaseStation.Client(**baseStationOptions)
-      self.connectOutputClient(outputClientOptions)
+      self.connectOutputClient(outputClientStream)
 
   class Client(Input.Client):
 

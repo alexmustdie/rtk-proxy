@@ -13,22 +13,21 @@ class Thread(QThread):
   def __init__(self):
     QThread.__init__(self)
 
-  def connectOutputClient(self, outputClientOptions):
+  def connectOutputClient(self, outputClientStream):
 
-    self.outputClient = proto.Messenger(outputClientOptions.getStream(), 'cache')
+    self.outputClient = proto.Messenger(outputClientStream.getStream(), 'cache')
 
     self.outputClient.failed.connect(self.raiseException)
     self.outputClient.handler.failed.connect(self.raiseException)
-
     self.outputClient.connect()
 
-    device = self.outputClient.hub[outputClientOptions.device]
+    device = self.outputClient.hub[outputClientStream.device]
 
     if device:
       self.inputClient.device = device
     else:
       self.outputClient.stop()
-      raise Exception('Ublox not found')
+      raise Exception('Device not found')
 
   def runDeviceStatusChecker(self):
     self.deviceStatusChecker = DeviceStatus.Checker(self.inputClient.device)

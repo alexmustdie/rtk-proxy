@@ -9,7 +9,7 @@ class Ntrip:
 
   class Thread(Input.Thread):
 
-    def __init__(self, ntripOptions, outputStream):
+    def __init__(self, ntripOptions, outputClientStream):
 
       super().__init__()
 
@@ -17,7 +17,7 @@ class Ntrip:
         ntripOptions['mountpoint'] = '/' + ntripOptions['mountpoint']
 
       self.inputClient = Ntrip.Client(**ntripOptions)
-      self.connectOutputClient(outputStream)
+      self.connectOutputClient(outputClientStream)
 
   class Client(Input.Client):
 
@@ -31,7 +31,7 @@ class Ntrip:
       self.height = 1212
 
       self.conn = socket.socket()
-      self.conn.connect((server, int(port)))
+      self.conn.connect((server, port))
       self.conn.settimeout(10)
       self.conn.sendall(self.getMountPointString().encode())
 
@@ -43,7 +43,7 @@ class Ntrip:
       if lon > 180:
         lon = (lon - 360) *- 1
         self.flagE = 'W'
-      elif (lon < 0 and lon >= -180):
+      elif lon < 0 and lon >= -180:
         lon = lon *- 1
         self.flagE = 'W'
       elif lon < -180:
