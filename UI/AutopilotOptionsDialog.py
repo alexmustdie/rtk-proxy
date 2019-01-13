@@ -6,9 +6,11 @@ from logic.utils import getSerialPorts
 
 class AutopilotOptionsDialog(OptionsDialog):
 
+  configFilePath = 'config/autopilot.json'
+
   def __init__(self):
 
-    super().__init__('config/autopilot.json', 'Опции автопилота')
+    super().__init__(self.configFilePath, 'Опции автопилота')
 
     fields = self.config.load()
 

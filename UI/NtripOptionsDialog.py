@@ -4,9 +4,11 @@ from UI.OptionsDialog import OptionsDialog
 
 class NtripOptionsDialog(OptionsDialog):
 
+  configFilePath = 'config/NTRIP.json'
+
   def __init__(self):
 
-    super().__init__('config/NTRIP.json', 'Опции NTRIP')
+    super().__init__(self.configFilePath, 'Опции NTRIP')
 
     fields = self.config.load()
 

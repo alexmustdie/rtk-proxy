@@ -5,9 +5,11 @@ from logic.utils import getSerialPorts
 
 class BaseStationOptionsDialog(OptionsDialog):
 
+  configFilePath = 'config/base_station.json'
+
   def __init__(self):
-    
-    super().__init__('config/base_station.json', 'Опции базовой станции')
+
+    super().__init__(self.configFilePath, 'Опции базовой станции')
 
     fields = self.config.load()
 

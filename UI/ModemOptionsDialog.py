@@ -4,9 +4,11 @@ from UI.OptionsDialog import OptionsDialog
 
 class ModemOptionsDialog(OptionsDialog):
 
+  configFilePath = 'config/modem.json'
+
   def __init__(self):
 
-    super().__init__('config/modem.json', 'Опции модема')
+    super().__init__(self.configFilePath, 'Опции модема')
 
     fields = self.config.load()
 
