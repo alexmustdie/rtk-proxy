@@ -1,0 +1,5 @@
+{
+  "serial": "COM12",
+  "baudrate": 57600,
+  "device": "Ublox"
+}
