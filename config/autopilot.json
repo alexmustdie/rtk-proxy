@@ -1,5 +1,5 @@
 {
-  "serial": "/dev/ttyUSB0",
-  "baudrate": 57600,
-  "device": "Ublox"
+  "serial": "",
+  "baudrate": 0,
+  "device": ""
 }

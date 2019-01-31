@@ -1,4 +1,7 @@
 cache/
 __pycache__/
 logic/__pycache__/
+logic/proto.py
 UI/__pycache__/
+build_linux/
+build_windows/
